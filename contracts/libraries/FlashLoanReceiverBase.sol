@@ -2,7 +2,7 @@
 pragma solidity ^0.8.7;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../interfaces/IERC20.sol";
 
 library DataTypes {
     // refer to the whitepaper, section 1.1 basic concepts for a formal description of these properties.

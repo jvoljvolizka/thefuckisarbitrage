@@ -1,10 +1,20 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.7;
+pragma solidity ^0.8.7;
 
-import "./FlashLoanReceiverBase.sol";
+import "./libraries/FlashLoanReceiverBase.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/IUniswapV2Pair.sol";
+import "./libraries/DexLibrary.sol";
 
 contract Run is FlashLoanReceiverBase, Ownable {
+    address pair1A;
+    address pair2A;
+    address from;
+    address to;
+    uint256 MAX_INT =
+        115792089237316195423570985008687907853269984665640564039457584007913129639935;
+    uint256 playAmount;
+
     constructor(ILendingPoolAddressesProvider _provider)
         FlashLoanReceiverBase(_provider)
     {}
@@ -32,6 +42,15 @@ contract Run is FlashLoanReceiverBase, Ownable {
             IERC20(assets[i]).approve(address(LENDING_POOL), amountOwing);
         }
 
+        IUniswapV2Pair pair1 = IUniswapV2Pair(pair1A);
+        IUniswapV2Pair pair2 = IUniswapV2Pair(pair2A);
+        uint256 swappedAmount = DexLibrary.swap(playAmount, from, to, pair1);
+        uint256 lastAmount = DexLibrary.swap(swappedAmount, to, from, pair2);
+        to = address(0);
+        from = address(0);
+        pair1A = address(0);
+        pair2A = address(0);
+        playAmount = 0;
         return true;
     }
 
@@ -88,8 +107,19 @@ contract Run is FlashLoanReceiverBase, Ownable {
     }
 
     function sikis(
+        address _from,
+        address _to,
         address _pair1,
         address _pair2,
         uint256 _amount
-    ) {}
+    ) external onlyOwner {
+        IERC20(_from).approve(address(_pair1), MAX_INT);
+        IERC20(_to).approve(address(_pair2), MAX_INT);
+        pair1A = _pair1;
+        pair2A = _pair2;
+        to = _to;
+        from = _from;
+        playAmount = _amount;
+        flashloan(_from, _amount);
+    }
 }
